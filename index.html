@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Floating Rock Paper Scissors Battle</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #1a1a1a;
+            color: white;
+        }
+        canvas {
+            border: 1px solid #444;
+        }
+        #controls {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+        }
+        button {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="battleground"></canvas>
+    <div id="controls">
+        <button onclick="startSimulation()">Start Simulation</button>
+        <span id="winner"></span>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('battleground');
+        const ctx = canvas.getContext('2d');
+        const winnerSpan = document.getElementById('winner');
+
+        canvas.width = 400;
+        canvas.height = 400;
+
+        const choices = ['🪨', '📄', '✂️'];
+        let battlers = [];
+
+        class Battler {
+            constructor(choice) {
+                this.choice = choice;
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.dx = (Math.random() - 0.5) * 2;
+                this.dy = (Math.random() - 0.5) * 2;
+                this.size = 20;
+            }
+
+            draw() {
+                ctx.font = `${this.size}px Arial`;
+                ctx.fillStyle = 'white';
+                ctx.fillText(this.choice, this.x, this.y);
+            }
+
+            move() {
+                this.x += this.dx;
+                this.y += this.dy;
+
+                if (this.x < 0 || this.x > canvas.width - this.size) this.dx *= -1;
+                if (this.y < 0 || this.y > canvas.height - this.size) this.dy *= -1;
+            }
+
+            collidesWith(other) {
+                const dx = this.x - other.x;
+                const dy = this.y - other.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                return distance < this.size;
+            }
+        }
+
+        function startSimulation() {
+            battlers = Array(50).fill().map(() => new Battler(choices[Math.floor(Math.random() * choices.length)]));
+            winnerSpan.textContent = '';
+            animate();
+        }
+
+        function animate() {
+            ctx.fillStyle = '#1a1a1a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            for (let i = 0; i < battlers.length; i++) {
+                battlers[i].move();
+                battlers[i].draw();
+
+                for (let j = i + 1; j < battlers.length; j++) {
+                    if (battlers[i].collidesWith(battlers[j])) {
+                        const result = battle(battlers[i], battlers[j]);
+                        if (result !== 'Tie') {
+                            battlers = battlers.filter(b => b !== (result === battlers[i] ? battlers[j] : battlers[i]));
+                        }
+                    }
+                }
+            }
+
+            if (battlers.length > 1) {
+                requestAnimationFrame(animate);
+            } else {
+                winnerSpan.textContent = `Winner: ${battlers[0].choice}`;
+            }
+        }
+
+        function battle(a, b) {
+            if (a.choice === b.choice) return 'Tie';
+            if (
+                (a.choice === '🪨' && b.choice === '✂️') ||
+                (a.choice === '📄' && b.choice === '🪨') ||
+                (a.choice === '✂️' && b.choice === '📄')
+            ) {
+                return a;
+            }
+            return b;
+        }
+    </script>
+</body>
+</html>
